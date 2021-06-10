@@ -5,13 +5,15 @@ import pathlib
 import shutil
 import time
 from ctypes import windll
+import magic #extern
+import base64
 
 copy=True
 
 foldername='mediaStor'
 mapstor='fmap.bcsv'
 hashlist=[]
-el=['png','jpg','tiff','jpeg','raw','mp4','mkv','avi','mp3','ogg','wav','ts','ps','m4a','mov','flv','img','dng']
+el=['png','jpg','tiff','jpeg','raw','mp4','mkv','avi','mp3','ogg','wav','ts','ps','m4a','mov','flv','img','dng','gif','webp']
 tpaths=['windows','programdata','program files (x86)','program files']
 gpaths=[]
 
@@ -30,6 +32,8 @@ oe=os.path.exists
 widl=windll.kernel32.GetDriveTypeW
 tlc=time.localtime
 tstr=time.strftime
+bs=base64.b16encode
+ou=os.urandom
 
 windll.kernel32.SetThreadExecutionState(0x80000000|0x00000001)
 
@@ -64,8 +68,21 @@ ba(cw().lower())
 
 def extget(a):
     i=a.rfind('.')
+    if i==-1:
+        e=magic.magic_file(a)
+        for n in e:
+            q=n[2].lower()[1:].strip()
+            if q=='webp' or q=='png' or q=='jpg' or q=='jpeg': q='gif'
+            if q in el:
+                return True,'.'+q
+        return False,'.none'
     q=a[i+1:].lower().strip()
+    if q=='webp': q='gif'
     return q in el,'.'+q
+
+def isdumb(a):
+    i=a.rfind('.')
+    return i==-1
 
 if op('hashlist.hash'):
     f=open('hashlist.hash','rb')
@@ -135,7 +152,8 @@ for ee in gpaths:
                     else: etr=((n-i)*ttt)+((ts-brt)*tth)+((n-i)*ttd)
                     #print('Estimated Max Time Remaining: '+tstr('%d:%H:%M:%S', etr))
                     print('Estimated Max Time Remaining: '+str(round(etr))+' s')
-                    aname=str(min(fn.stat().st_mtime,fn.stat().st_ctime))+q[1]
+                    #aname=str(min(fn.stat().st_mtime,fn.stat().st_ctime))+q[1]
+                    aname=bs(ou(16)).decode()+q[1]
                     g=open(p,"rb")
                     fr=g.read
                     file_hash = hln('blake2b')
@@ -148,6 +166,7 @@ for ee in gpaths:
                         print('Copying File Of Size '+str(ss)+' Bytes')
                         sp=opj(cw(),foldername,f)
                         rrn=f
+                        if isdumb(p): sp+=q[1]
                         if op(sp):
                             sp=opj(cw(),foldername,aname)
                             rrn=aname

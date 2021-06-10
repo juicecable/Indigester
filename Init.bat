@@ -12,4 +12,5 @@ goto end
 
 :end
 call python.exe "%rp%\init.py"
+cd ..
 pause
