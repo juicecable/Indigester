@@ -6,7 +6,7 @@ import time
 import base64
 import json
 import zipfile
-import magic  # extern
+import magic # extern
 
 copy = True # Copy the files
 clone = True # Clone the directory structure
@@ -77,7 +77,7 @@ if otype == "nt":
 # Dynamic Memory Allocation
 if dynamicsize:
     import psutil
-    chunksize = min(int(psutil.virtual_memory()[1]) // 4, maxsize)
+    chunksize = min(int(psutil.virtual_memory()[1]) // 8, maxsize)
 
 # Benchmarking
 ta = tt()
@@ -281,6 +281,7 @@ for ee in gpaths:
                         file_hash = hln("blake2b")
                         fu = file_hash.update
                         while chunk := fr(chunksize):
+                            lchunk = chunk
                             fu(chunk)
                         h = file_hash.digest()
                         g.close()
@@ -303,7 +304,13 @@ for ee in gpaths:
                                 ta = tt()
                                 if clone:
                                     om(od(sp), exist_ok=True)
-                                sc(p, sp)
+                                if ss <= chunksize:
+                                    g = open(sp, "wb")
+                                    g.write(lchunk)
+                                    g.close()
+                                    cs(p, sp)
+                                else:
+                                    sc(p, sp)
                                 ggw(h + ("," + rrn + "\n").encode())
                                 tb = tt()
                                 ttc = (tb - ta) / ss
@@ -332,6 +339,7 @@ for ee in gpaths:
                                     file_hash = hln("blake2b")
                                     fu = file_hash.update
                                     while chunk := fr(chunksize):
+                                        lchunk = chunk
                                         fu(chunk)
                                     h = file_hash.digest()
                                     g.close()
@@ -351,13 +359,18 @@ for ee in gpaths:
                                             rrn = aname
                                         if copy:
                                             ta = tt()
-                                            g = zipo(nn, "r")
                                             if clone:
                                                 om(od(sp), exist_ok=True)
-                                            dg = open(sp, "wb")
-                                            co(g, dg)
-                                            g.close()
-                                            dg.close()
+                                            if ss <= chunksize:
+                                                g = open(sp, "wb")
+                                                g.write(lchunk)
+                                                g.close()
+                                            else:
+                                                g = zipo(nn, "r")
+                                                dg = open(sp, "wb")
+                                                co(g, dg)
+                                                g.close()
+                                                dg.close()
                                             cs(p, sp)
                                             ggw(h + ("," + rrn + "\n").encode())
                                             tb = tt()
