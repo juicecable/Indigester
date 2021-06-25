@@ -1,5 +1,4 @@
 # Copyright Derek Frombach, All Rights Reserved
-import hashlib
 import os
 import shutil
 import time
@@ -11,11 +10,12 @@ import magic # extern
 copy = True # Copy the files
 clone = True # Clone the directory structure
 extract = True # Un-zip the zips
-backuptime = 500 # Number of entries before periodic backup of hashtable
+backuptime = 6000 # Number of entries before periodic backup of hashtable
 devmode = True # Allows for portability
 maxsize = 4294967296 # Max file size in bytes that can be copied or checked (for fat32)
-chunksize = 4194304 # Size in bytes of each file chunk (bigger is better, unless you don't have enough RAM)
-dynamicsize = False #If to ignore chunksize and use dynamic chunk size based on available RAM
+chunksize = 268435456 # Size in bytes of each file chunk (bigger is better, unless you don't have enough RAM)
+dynamicsize = True # If to ignore chunksize and use dynamic chunk size based on available RAM
+usefasthash = True # If to use blake3 instead of blake2s
 
 foldername = "mediaStor" # Storage Folder
 mapstor = "fmap.bcsv" # File Name Map
@@ -37,18 +37,31 @@ tpaths = [
     "program files",
     "$recycle.bin",
 ] # Root Folders To Avoid
-gpaths = []
-hashlist = []
+gpaths = set()
+hashlist = set()
+
+# Making hash computation significantly faster
+if usefasthash:
+    import blake3
+    hln = blake3.blake3
+
+    def newhash():
+        return hln(multithreading=True)
+else:
+    import hashlib
+    hln = hashlib.new
+
+    def newhash():
+        return hln('blake2s')
 
 # Speedups
 opj = os.path.join
 opg = os.path.getsize
-hln = hashlib.new
-hla = hashlist.append
+hla = hashlist.add
 sc = shutil.copy2
 op = os.path.isfile
 cw = os.getcwd
-gp = gpaths.append
+gp = gpaths.add
 ow = os.walk
 tt = time.time
 oe = os.path.exists
@@ -77,25 +90,26 @@ if otype == "nt":
 # Dynamic Memory Allocation
 if dynamicsize:
     import psutil
-    chunksize = min(int(psutil.virtual_memory()[1]) // 8, maxsize)
+    chunksize = min(int(psutil.virtual_memory()[1]) // 4, maxsize)
 
 # Benchmarking
 ta = tt()
 g = open("python38.dll", "rb")
 fr = g.read
-file_hash = hln("blake2b")
+ss=opg("python38.dll")
+file_hash = newhash()
 fu = file_hash.update
-while chunk := fr(chunksize):
+while chunk := fr(min(chunksize,ss)):
     fu(chunk)
 h = file_hash.digest()
 g.close()
 tb = tt()
-tth = (tb - ta) / chunksize
+tth = (tb - ta) / ss
 
 # Listing All Drives
 drives = []
-bpaths = []
-ba = bpaths.append
+bpaths = set()
+ba = bpaths.add
 da = drives.append
 if otype == "nt":
     for i in range(65, 91):
@@ -192,8 +206,8 @@ def isdumb(a):
 if op("hashlist.hash"):
     f = open("hashlist.hash", "rb")
     fr = f.read
-    while chunk := fr(64):
-        if len(chunk) == 64:
+    while chunk := fr(32):
+        if len(chunk) == 32:
             hla(chunk)
     f.close()
 
@@ -213,20 +227,16 @@ if not os.path.exists("gudcache") or devmode:
                         bad = True
                         break
                 if not bad:
+                    print(root)
                     ta = tt()
                     for f in files:
                         p = opj(root, f)
                         if extget(p, True)[0]:
                             n += 1
                             ts += opg(p)
-                            bad = True
-                    if bad: # If The File Is Wanted
-                        root = root.lower()
-                        if not any(x in root for x in gpaths):
-                            print(root)
-                            gp(root)
-                        tb = tt()
-                        ttt += tb - ta
+                            gp(p)
+                    tb = tt()
+                    ttt += tb - ta
             except:
                 pass
     gud = json.dumps(gpaths)
@@ -255,148 +265,142 @@ else:
     iitt = ((n - i) * ttt) + ((ts - brt) * tth) + ((n - i) * ttd)
 
 # The Main Loop
-ggg = open(mapstor, "ab")
-ggw = ggg.write
 hugs = True
 aatt = tt()
-for ee in gpaths:
-    for root, dirs, files in ow(ee): # OS.WALK
-        for f in files:
-            p = opj(root, f) # Path
-            ss = opg(p) # File Size
-            if ss > 0 and ss <= maxsize:
-                try:
-                    q = extget(p)
-                    if q[0]: # If The File Type Is Wanted
-                        hugs = True
-                        i += 1
-                        print("Checking File " + str(i) + " Of " + str(n) + " Of Size " + str(ss) + " Bytes")
-                        if copy:
-                            etr = (((n - i) * ttt) + ((ts - brt) * tth) + ((ts - brt) * ttc) + ((n - i) * ttd))
+for p in gpaths:
+    root = od(p)
+    f = ob(p)
+    ss = opg(p) # File Size
+    if ss > 0 and ss <= maxsize:
+        try:
+            q = extget(p)
+            if q[0]: # If The File Type Is Wanted
+                hugs = True
+                i += 1
+                print("Checking File " + str(i) + " Of " + str(n) + " Of Size " + str(ss) + " Bytes")
+                if copy:
+                    etr = (((n - i) * ttt) + ((ts - brt) * tth) + ((ts - brt) * ttc) + ((n - i) * ttd))
+                else:
+                    etr = ((n - i) * ttt) + ((ts - brt) * tth) + ((n - i) * ttd)
+                print("Estimated Max Time Remaining: " + str(round(etr)) + "s")
+                g = open(p, "rb")
+                fr = g.read
+                file_hash = newhash()
+                fu = file_hash.update
+                while chunk := fr(min(chunksize,ss)):
+                    lchunk = chunk
+                    fu(chunk)
+                h = file_hash.digest()
+                g.close()
+                if not h in hashlist:
+                    print("Copying File Of Size " + str(ss) + " Bytes")
+                    if clone:
+                        sp = opj(cw(), foldername, oy(root)[0][:1], oy(root)[1][1:], f)
+                    else:
+                        sp = opj(cw(), foldername, f)
+                    rrn = f
+                    if isdumb(p):
+                        sp += q[1]
+                    if op(sp):
+                        rrn = bs(ou(16)).decode() + q[1]
+                        if clone:
+                            sp = opj(cw(), foldername, oy(root)[0][:1], oy(root)[1][1:], rrn)
                         else:
-                            etr = ((n - i) * ttt) + ((ts - brt) * tth) + ((n - i) * ttd)
-                        print("Estimated Max Time Remaining: " + str(round(etr)) + "s")
-                        g = open(p, "rb")
-                        fr = g.read
-                        file_hash = hln("blake2b")
-                        fu = file_hash.update
-                        while chunk := fr(chunksize):
-                            lchunk = chunk
-                            fu(chunk)
-                        h = file_hash.digest()
-                        g.close()
-                        if not h in hashlist:
-                            print("Copying File Of Size " + str(ss) + " Bytes")
-                            if clone:
-                                sp = opj(cw(), foldername, oy(root)[0][:1], oy(root)[1][1:], f)
-                            else:
-                                sp = opj(cw(), foldername, f)
-                            rrn = f
-                            if isdumb(p):
-                                sp += q[1]
-                            if op(sp):
-                                rrn = bs(ou(16)).decode() + q[1]
+                            sp = opj(cw(), foldername, rrn)
+                    if copy:
+                        ta = tt()
+                        if clone:
+                            om(od(sp), exist_ok=True)
+                        if ss <= chunksize:
+                            g = open(sp, "wb")
+                            g.write(lchunk)
+                            g.close()
+                            cs(p, sp)
+                        else:
+                            sc(p, sp)
+                        tb = tt()
+                        ttc = (tb - ta) / ss
+                    hla(h)
+                    print("Done Copying File")
+                brt += ss
+            elif iszip(p): #If The File Type Is Zip And Is Wanted
+                hugs = True
+                i += 1
+                print("Checking Archive " + str(i) + " Of " + str(n) + " Of Size " + str(ss) + " Bytes")
+                zipd = zz(p, "r")
+                ln = len(zipd.namelist())
+                o = 1
+                zipi = zipd.getinfo
+                zipo = zipd.open
+                for nn in zipd.namelist():
+                    r = ob(nn)
+                    gg = extget(r, r=False)
+                    if gg[0]:
+                        f = f.split(".")[0]
+                        ss = zipd.getinfo(nn).file_size
+                        print("Checking Subfile " + str(o) + " of " + str(ln) + " Of Size " + str(ss) + " Bytes")
+                        if ss > 0 and ss<=maxsize:
+                            g = zipo(nn, "r")
+                            fr = g.read
+                            file_hash = newhash()
+                            fu = file_hash.update
+                            while chunk := fr(min(chunksize,ss)):
+                                lchunk = chunk
+                                fu(chunk)
+                            h = file_hash.digest()
+                            g.close()
+                            if not h in hashlist:
+                                print("Copying File Of Size " + str(ss) + " Bytes")
                                 if clone:
-                                    sp = opj(cw(), foldername, oy(root)[0][:1], oy(root)[1][1:], rrn)
+                                    sp = opj(cw(), foldername, oy(root)[0][:1], oy(root)[1][1:], f, nn)
                                 else:
-                                    sp = opj(cw(), foldername, rrn)
-                            if copy:
-                                ta = tt()
-                                if clone:
-                                    om(od(sp), exist_ok=True)
-                                if ss <= chunksize:
-                                    g = open(sp, "wb")
-                                    g.write(lchunk)
-                                    g.close()
+                                    sp = opj(cw(), foldername, ob(r))
+                                rrn = ob(r)
+                                if op(sp):
+                                    aname = bs(ou(16)).decode() + q[1]
+                                    if clone:
+                                        sp = opj(cw(), foldername, oy(root)[0][:1], oy(root)[1][1:], f, od(nn), aname)
+                                    else:
+                                        sp = opj(cw(), foldername, aname)
+                                    rrn = aname
+                                if copy:
+                                    ta = tt()
+                                    if clone:
+                                        om(od(sp), exist_ok=True)
+                                    if ss <= chunksize:
+                                        g = open(sp, "wb")
+                                        g.write(lchunk)
+                                        g.close()
+                                    else:
+                                        g = zipo(nn, "r")
+                                        dg = open(sp, "wb")
+                                        co(g, dg)
+                                        g.close()
+                                        dg.close()
                                     cs(p, sp)
-                                else:
-                                    sc(p, sp)
-                                ggw(h + ("," + rrn + "\n").encode())
-                                tb = tt()
-                                ttc = (tb - ta) / ss
-                            hla(h)
-                            print("Done Copying File")
-                        brt += ss
-                    elif iszip(p): #If The File Type Is Zip And Is Wanted
-                        hugs = True
-                        i += 1
-                        print("Checking Archive " + str(i) + " Of " + str(n) + " Of Size " + str(ss) + " Bytes")
-                        zipd = zz(p, "r")
-                        ln = len(zipd.namelist())
-                        o = 1
-                        zipi = zipd.getinfo
-                        zipo = zipd.open
-                        for nn in zipd.namelist():
-                            r = ob(nn)
-                            gg = extget(r, r=False)
-                            if gg[0]:
-                                f = f.split(".")[0]
-                                ss = zipd.getinfo(nn).file_size
-                                print("Checking Subfile " + str(o) + " of " + str(ln) + " Of Size " + str(ss) + " Bytes")
-                                if ss > 0 and ss<=maxsize:
-                                    g = zipo(nn, "r")
-                                    fr = g.read
-                                    file_hash = hln("blake2b")
-                                    fu = file_hash.update
-                                    while chunk := fr(chunksize):
-                                        lchunk = chunk
-                                        fu(chunk)
-                                    h = file_hash.digest()
-                                    g.close()
-                                    if not h in hashlist:
-                                        print("Copying File Of Size " + str(ss) + " Bytes")
-                                        if clone:
-                                            sp = opj(cw(), foldername, oy(root)[0][:1], oy(root)[1][1:], f, nn)
-                                        else:
-                                            sp = opj(cw(), foldername, ob(r))
-                                        rrn = ob(r)
-                                        if op(sp):
-                                            aname = bs(ou(16)).decode() + q[1]
-                                            if clone:
-                                                sp = opj(cw(), foldername, oy(root)[0][:1], oy(root)[1][1:], f, od(nn), aname)
-                                            else:
-                                                sp = opj(cw(), foldername, aname)
-                                            rrn = aname
-                                        if copy:
-                                            ta = tt()
-                                            if clone:
-                                                om(od(sp), exist_ok=True)
-                                            if ss <= chunksize:
-                                                g = open(sp, "wb")
-                                                g.write(lchunk)
-                                                g.close()
-                                            else:
-                                                g = zipo(nn, "r")
-                                                dg = open(sp, "wb")
-                                                co(g, dg)
-                                                g.close()
-                                                dg.close()
-                                            cs(p, sp)
-                                            ggw(h + ("," + rrn + "\n").encode())
-                                            tb = tt()
-                                            ttc = (tb - ta) / ss
-                                        hla(h)
-                                        print("Done Copying File")
-                                elif ss > maxsize:
-                                    print("File " + str(nn) + " of Size " + str(ss) + " Bytes Is Too Big")
-                            o += 1
-                    if i % backuptime == 0 and i != 0 and hugs: # Backup
-                        f = open("hashlist.hash", "wb")
-                        f.write(b"".join(hashlist))
-                        f.close()
-                        print("Backed Up!")
-                        hugs = False
-                except:
-                    print("Failed Checking Or Copying " + str(i) + " Of " + str(n) + "!")
-            elif ss > maxsize:
-                print("File " + str(p) + " of Size " + str(ss) + " Bytes Is Too Big")
+                                    tb = tt()
+                                    ttc = (tb - ta) / ss
+                                hla(h)
+                                print("Done Copying File")
+                        elif ss > maxsize:
+                            print("File " + str(nn) + " of Size " + str(ss) + " Bytes Is Too Big")
+                    o += 1
+            if i % backuptime == 0 and i != 0 and hugs: # Backup
+                f = open("hashlist.hash", "wb")
+                f.write(b"".join(list(hashlist)))
+                f.close()
+                print("Backed Up!")
+                hugs = False
+        except:
+            print("Failed Checking Or Copying " + str(i) + " Of " + str(n) + "!")
+    elif ss > maxsize:
+        print("File " + str(p) + " of Size " + str(ss) + " Bytes Is Too Big")
 aaet = tt()
 print(aaet - aatt)
 print(iitt)
 
 # Saving Hashtable
 print("Done Copying And Checking Files")
-ggg.close()
 f = open("hashlist.hash", "wb")
 f.write(b"".join(hashlist))
 f.close()
