@@ -1,5 +1,5 @@
 pip-21.1.2-py3-none-any.whl
-blake3-0.1.8-cp38-none-win_amd64.whl
+https://github.com/oconnor663/blake3-py/releases/download/0.1.8/blake3-0.1.8-cp38-none-win_amd64.whl
 psutil-5.8.0-cp38-cp38-win_amd64.whl
 setuptools-57.0.0-py3-none-any.whl
 wheel-0.36.2-py2.py3-none-any.whl
