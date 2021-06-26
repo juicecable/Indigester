@@ -1,4 +1,4 @@
-blake3 @ file:///blake3-0.1.8-cp38-none-win32.whl
-wheel @ file:///wheel-0.36.2-py2.py3-none-any.whl
-setuptools @ file:///setuptools-57.0.0-py3-none-any.whl
-psutil @ file:///psutil-5.8.0-cp38-cp38-win32.whl
+blake3
+wheel
+setuptools
+psutil
