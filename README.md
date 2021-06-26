@@ -7,6 +7,7 @@
 - Provides strong integrity verification
 - Forensically decrypts cache files
 - Extracts archieves
+- Keeps all of the original metadata (such as date created)
 
 ### Instructions:
 
