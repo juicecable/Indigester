@@ -11,6 +11,7 @@
 - Copies the exact directory structure
 - Portable and extremely flexible
 - Multicore
+- Useful for regular secure offsite backups
 
 ### Instructions:
 
