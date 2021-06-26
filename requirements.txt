@@ -1,0 +1,5 @@
+pip
+setuptools
+blake3
+wheel
+puremagic
