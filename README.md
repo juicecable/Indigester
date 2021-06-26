@@ -39,3 +39,7 @@
 ### Compatibility
 
   Currently only compatible with Windows XP - Windows 11, partial support for Linux, and planned support for OS X and Android
+  
+### Benchmark
+
+  The program currently is able to process about 1 million relevant files per hour on an SSD machine, and 300 thousand relevant files per hour on an HDD machine.
