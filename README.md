@@ -2,6 +2,12 @@
 
 ## An Intelligent and Fast Cross-Platform Backup and Forensics Tool
 
+- Does backups of only the file types you want
+- Gets rid of duplicates
+- Provides strong integrity verification
+- Forensically decrypts cache files
+- Extracts archieves
+
 ### Instructions:
 
   #### If backing up to a drive already in use:
