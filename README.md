@@ -48,6 +48,12 @@
     3. Remove the last backup drive, and leave all of the same storage devices attached until the backup program can complete without the disk filling up completely in the process
     4. While remaining in this condition as stated above, the import.py file must be modified such that devmode = False, otherwise it must be devmode = True
     5. Follow the appropriate instructions on backing up to a drive already in use or to a new drive, then go back to step 2 until all of the files are backed up
+    
+  #### If using Mac OSX:
+  
+    1. Download and install Python 3.8
+    2. Run "python -m pip install blake3 setuptools wheel"
+    3. Follow the relevant steps for backing up a drive that is already in use or a new drive, except instead of running anything from the main folder, navigate to the OSX directory, and run the relevant python files in that directory instead
 
 ### Compatibility
 
