@@ -8,6 +8,8 @@
 - Forensically decrypts cache files
 - Extracts archieves
 - Keeps all of the original metadata (such as date created)
+- Copies the exact directory structure
+- Portable and extremely flexible
 
 ### Instructions:
 
