@@ -1,3 +1,4 @@
+#Copyright (c) 2021 Derek Frombach
 import os
 import shutil
 import time
