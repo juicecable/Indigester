@@ -1,0 +1,23 @@
+---
+name: Feature request
+about: Suggest an idea for this project
+title: ''
+labels: documentation, enhancement
+assignees: juicecable
+
+---
+
+**Is your feature request related to a problem? Please describe.**
+A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+
+**Describe the solution you'd like**
+A clear and concise description of what you want to happen.
+
+**Describe alternatives you've considered**
+A clear and concise description of any alternative solutions or features you've considered.
+
+**Additional context**
+Add any other context or screenshots about the feature request here.
+
+**Suggested improvements to docs**
+A brief description of what the changes required to the documentation will need to be in order to add this enhancement.
