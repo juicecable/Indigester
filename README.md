@@ -10,6 +10,7 @@
 - Keeps all of the original metadata (such as date created)
 - Copies the exact directory structure
 - Portable and extremely flexible
+- Multicore
 
 ### Instructions:
 
