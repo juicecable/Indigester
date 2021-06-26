@@ -1,5 +1,0 @@
-pip
-blake3 0.1.8
-psutil
-setuptools
-wheel
