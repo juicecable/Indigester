@@ -18,7 +18,6 @@ dynamicsize = True # If to ignore chunksize and use dynamic chunk size based on 
 usefasthash = True # If to use blake3 instead of blake2s
 
 foldername = "mediaStor" # Storage Folder
-mapstor = "fmap.bcsv" # File Name Map
 exs = [
     "web",
     "audio",
@@ -94,9 +93,9 @@ if dynamicsize:
 
 # Benchmarking
 ta = tt()
-g = open("python38.dll", "rb")
+g = open("magic_data.json", "rb")
 fr = g.read
-ss=opg("python38.dll")
+ss=opg("magic_data.json")
 file_hash = newhash()
 fu = file_hash.update
 while chunk := fr(min(chunksize,ss)):
