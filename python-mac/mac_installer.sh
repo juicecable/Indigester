@@ -34,8 +34,8 @@ else
 fi
 
 
-#python3 ../init.py
-#python3 ../delcopy.py
-#python3 ../importer.py
+python3 ../init.py
+python3 ../delcopy.py
+python3 ../importer.py
 
 
