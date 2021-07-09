@@ -33,9 +33,6 @@ else
   echo 'psutil installed'
 fi
 
-
-python3 ../init.py
-python3 ../delcopy.py
 python3 ../importer.py
 
 
