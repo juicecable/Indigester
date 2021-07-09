@@ -51,9 +51,7 @@
     
 #### If using Mac OSX:
 
-  1. Download and install Python 3.8
-  2. Run "python -m pip install blake3 setuptools wheel"
-  3. Follow the relevant steps for backing up a drive that is already in use or a new drive, except instead of running anything from the main folder, navigate to the OSX directory, and run the relevant python files in that directory instead
+  1. Follow the instructions for backing up to a new drive or a drive all ready in use, except running mac_importer.sh instead of Import.bat
     
 #### If wanting to just test or benchmark:
 
@@ -61,7 +59,7 @@
 
 ### Compatibility
 
-  Currently only compatible with Windows XP - Windows 11, partial support for Linux, and planned support for OS X and Android
+  Currently only compatible with Windows XP - Windows 11, MAC OSX, partial support for Linux, and planned support for Android
   
 ### Benchmark
 
