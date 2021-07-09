@@ -51,11 +51,11 @@
     
 #### If using Mac OSX:
 
-  1. Follow the instructions for backing up to a new drive or a drive all ready in use, except running mac_importer.sh instead of Import.bat
+  1. Follow the instructions for backing up to a new drive or a drive all ready in use, except running mac_importer.sh instead of Import.bat, and mac_delcopy.sh instead of Delcopy.bat
     
 #### If wanting to just test or benchmark:
 
-  1. Follow the relevant steps for backing up a drive that is already in use or a new drive, except run Init.bat instead of Import.bat
+  1. Follow the relevant steps for backing up a drive that is already in use or a new drive, except run Init.bat (mac_init.sh for mac) instead of Import.bat
 
 ### Compatibility
 
