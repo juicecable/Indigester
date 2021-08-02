@@ -11,7 +11,7 @@ from stat import S_IREAD, S_IRGRP, S_IROTH, S_ISVTX
 copy = False # Copy the files
 clone = False # Clone the directory structure
 extract = True # Un-zip the zips
-backupTime = 6000 # Number of entries before periodic backup of hashtable
+backupTime = 60000 # Number of entries before periodic backup of hashtable
 devMode = True # Allows for portability
 maxSize = 4294967296 # Max file size in bytes that can be copied or checked (for fat32)
 chunkSize = 268435456 # Size in bytes of each file chunk (bigger is better, unless you don't have enough RAM)
@@ -39,6 +39,9 @@ badDirectories = [
     "$recycle.bin",
 ] # Root Folders To Avoid
 hashList = set()
+newHashes = set()
+verifList = set()
+written = False
 
 # Making hash computation significantly faster
 if useFastHash:
@@ -58,6 +61,8 @@ else:
 pathJoin = os.path.join
 fileGetSize = os.path.getsize
 hashListAdd = hashList.add
+newHashesAdd = newHashes.add
+verifListUpdate = verifList.update
 pureCopy = shutil.copy2
 isFile = os.path.isfile
 getCurrentWorkingDirectory = os.getcwd
@@ -92,6 +97,14 @@ if dynamicSize:
 # Functions
 
 def hashIt(fileA="", fileASize=0, fileBytes=b''):
+
+    """Hashes a chunk or a file, given:
+    
+    fileA: The file path (string)
+    fileASize: The file size (integer)
+    fileBytes: The file chunk (bytes)
+    """
+
     fileHash = newHash()
     hashUpdate = fileHash.update
     if fileA!="":
@@ -109,6 +122,9 @@ def hashIt(fileA="", fileASize=0, fileBytes=b''):
     return hash, lastChunk
 
 def benchMark():
+
+    """Benchmarks the file read and hashing times"""
+
     print(os.getcwd())
     timeA = currentTime()
     fileASize = fileGetSize("python38.dll")
@@ -119,6 +135,9 @@ def benchMark():
     return timeToHash
 
 def listDrives():
+
+    """Returns a list of the drives"""
+
     drives = []
     badPaths = set()
     badPathsAdd = badPaths.add
@@ -137,6 +156,9 @@ def listDrives():
     return drives, badPaths
 
 def loadCategories():
+
+    """Loads the file type categories"""
+
     global badPaths
     fileA = open("categories.json", "r")
     forms = json.loads(fileA.read())
@@ -208,6 +230,9 @@ def isCacheFile(filePath):
     return index == -1
 
 def loadHashList():
+
+    """Loads the hashlist from file"""
+
     global hashList
     if isFile("hashlist.hash"):
         fileA = open("hashlist.hash", "rb")
@@ -218,21 +243,50 @@ def loadHashList():
         fileA.close()
 
 def saveHashList():
-    tempList=list(hashList)
-    if pathExists("hashlist.hash"):
+    global written
+    global newHashes
+
+    """Saves the hashlist to file, and preforms integrity verification step"""
+
+    if written:
+        tempList=list(newHashes)
+        del newHashes
+        newHashes = set()
         pureCopy("hashlist.hash","~hashlist.hash")
-    fileA = open("hashlist.hash", "wb")
-    fileA.write(b"".join(tempList))
-    fileA.close()
-    if pathExists("veriflist.hash"):
+        fileA = open("hashlist.hash", "ab")
+        fileA.write(b"".join(tempList))
+        fileA.close()
         pureCopy("veriflist.hash","~veriflist.hash")
-    fileA = open("veriflist.hash", "wb")
-    for hash in tempList:
-        hash, lastChunk = hashIt(fileBytes = hash)
-        fileA.write(hash)
-    fileA.close()
+        tempVar = [hashIt(fileBytes = hash)[0] for hash in tempList]
+        verifListUpdate(tempVar)
+        fileA = open("veriflist.hash", "wb")
+        [fileA.write(hash) for hash in tempVar]
+        fileA.close()
+    else:
+        del newHashes
+        newHashes = set()
+        tempList=list(hashList)
+        verifListUpdate(hashList)
+        if pathExists("hashlist.hash"):
+            pureCopy("hashlist.hash","~hashlist.hash")
+        fileA = open("hashlist.hash", "wb")
+        fileA.write(b"".join(tempList))
+        fileA.close()
+        if pathExists("veriflist.hash"):
+            pureCopy("veriflist.hash","~veriflist.hash")
+        fileA = open("veriflist.hash", "wb")
+        [fileA.write(hashIt(fileBytes = hash)[0]) for hash in tempList]
+        fileA.close()
+        written = True
 
 def scanFiles(drives, badPaths):
+
+    """Scans the files on the drives, given:
+    
+    drives: The list of the drives to scan (list of strings)
+    badPaths: The list of the paths to not scan (list of strings)
+    """
+
     goodPaths = set()
     goodPathsAdd = goodPaths.add
     if not pathExists("gudcache") or devMode:
@@ -269,12 +323,25 @@ def scanFiles(drives, badPaths):
     return goodPaths, totalSize, numberOfFiles
 
 def calculateEstimatedTimeRemaining(totalSize, openedSize, numberOfFiles, index):
+
+    """Attempts to calculate the estimated time remaining, given:
+    *Doesn't compensate for OS overhead*
+    
+    totalSize: The max cumulative size of the files (integer)
+    openedSize: The max cumulative size of files already processed (integer)
+    numberOfFiles: The max cumulative number of files still to be processed (integer)
+    index: The current number of files that have been processed (integer)
+    """
+
     if copy:
         return ((totalSize - openedSize) * timeToHash) + ((totalSize - openedSize) * timeToCopy) + ((numberOfFiles - index) * timeToDisplay)
     else:
         return ((totalSize - openedSize) * timeToHash) + ((numberOfFiles - index) * timeToDisplay)
 
 def modifyPath(folderName, root, sourceFileName, sourcePath, sourceFileShortName="", subFilePath="", subFileName=""):
+
+    "Modifies a path in order to satisfy the requirement of unique file names"
+
     temporaryDrive = getDriveLetter(root)
     if sourceFileShortName!="":
         if clone:
@@ -315,6 +382,14 @@ def modifyPath(folderName, root, sourceFileName, sourcePath, sourceFileShortName
     return destinationPath
 
 def directoryCopy(sourcePath, fileSize, destinationPath):
+
+    """Copies a directory structure (folders only), and copies the file into the folder if its small enough (for some reason), given:
+    
+    sourcePath: The source path to copy the structure from (string of leaf folder)
+    fileSize: The size of the file that may or may not be copied (integer)
+    destinationPath: The destination path to copy the structure to (string of parent folder)
+    """
+
     if clone:
         makeDirectoryStructure(directoryName(destinationPath), exist_ok=True)
     if fileSize <= chunkSize:
@@ -358,11 +433,11 @@ predictedTime = calculateEstimatedTimeRemaining(totalSize, openedSize, numberOfF
 allowBackup = True
 timeC = currentTime()
 for sourcePath in goodPaths:
-    root = directoryName(sourcePath)
-    sourceFileName = fileName(sourcePath)
-    sourceFileSize = fileGetSize(sourcePath) # File Size
-    if sourceFileSize > 0 and sourceFileSize <= maxSize:
-        try:
+    try:
+        root = directoryName(sourcePath)
+        sourceFileName = fileName(sourcePath)
+        sourceFileSize = fileGetSize(sourcePath) # File Size
+        if sourceFileSize > 0 and sourceFileSize <= maxSize:
             extension = getExtension(sourcePath)
             if extension[0]: # If The File Type Is Wanted
                 allowBackup = True
@@ -384,6 +459,7 @@ for sourcePath in goodPaths:
                         timeB = currentTime()
                         timeToCopy = (timeB - timeA) / sourceFileSize
                     hashListAdd(hash)
+                    newHashesAdd(hash)
                     print("Done Copying File")
                 openedSize += sourceFileSize
             elif isZip(sourcePath): #If The File Type Is Zip And Is Wanted
@@ -423,6 +499,7 @@ for sourcePath in goodPaths:
                                     timeB = currentTime()
                                     timeToCopy = (timeB - timeA) / subFileSize
                                 hashListAdd(hash)
+                                newHashesAdd(hash)
                                 print("Done Copying File")
                         elif subFileSize > maxSize:
                             print("File " + str(subFilePath) + " of Size " + str(subFileSize) + " Bytes Is Too Big")
@@ -431,10 +508,10 @@ for sourcePath in goodPaths:
                 saveHashList()
                 print("Backed Up!")
                 allowBackup = False
-        except:
-            print("Failed Checking Or Copying " + str(index) + " Of " + str(numberOfFiles) + "!")
-    elif sourceFileSize > maxSize:
-        print("File " + str(sourcePath) + " of Size " + str(sourceFileSize) + " Bytes Is Too Big")
+        elif sourceFileSize > maxSize:
+            print("File " + str(sourcePath) + " of Size " + str(sourceFileSize) + " Bytes Is Too Big")
+    except:
+        print("Failed Checking Or Copying " + str(index) + " Of " + str(numberOfFiles) + "!")
 timeD = currentTime()
 print(timeD - timeC)
 print(predictedTime)
