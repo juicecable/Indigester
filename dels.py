@@ -1,4 +1,4 @@
-#Copyright (c) 2021 Derek Frombach
+#Copyright (c) 2022 Derek Frombach
 import subprocess
 import os
 

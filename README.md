@@ -2,8 +2,6 @@
 
 ## An Intelligent and Fast Cross-Platform Backup and Forensics Tool
 
-[![Badge](http://canarytokens.com/about/images/static/41jopsqociai69bydftdftqxy/submit.aspx)](https://avatars.githubusercontent.com/u/20115700)
-
 [![CodeQL](https://github.com/juicecable/Indigester/actions/workflows/codeql-analysis.yml/badge.svg?branch=main)](https://github.com/juicecable/Indigester/actions/workflows/codeql-analysis.yml)
 
 - Does backups of only the file types you want
