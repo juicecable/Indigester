@@ -59,7 +59,7 @@
 
 ### Compatibility
 
-  Currently only compatible with Windows XP - Windows 11, MAC OSX, partial support for Linux, and planned support for Android
+  Currently only compatible with Windows 8 - Windows 11, MAC OSX, partial support for Linux, and planned support for Android and IOS
   
 ### Benchmark
 
